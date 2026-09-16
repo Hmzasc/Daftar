@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>دفتر</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- شاشة الترحيب -->
+  <section id="screen-welcome" class="screen active">
+    <div class="topbar">
+      <div class="brand"><span class="brand-mark">د</span> دفتر</div>
+    </div>
+    <h1>دَينك، مسجَّل ومرئي للطرفين</h1>
+    <p class="sub">دفتر يربط البائع بزبائنه برمز خاص، ويحسب الرصيد تلقائياً، ويُظهر أي تعديل بشفافية كاملة.</p>
+
+    <div class="explain-card">
+      <div class="explain-icon">🏪</div>
+      <div>
+        <p class="explain-title">أنت بائع</p>
+        <p class="explain-desc">أضف زبونك برقمه، وابدأ تسجيل الدَّين فوراً حتى قبل أن ينضم للتطبيق.</p>
+      </div>
+    </div>
+    <div class="explain-card">
+      <div class="explain-icon">👤</div>
+      <div>
+        <p class="explain-title">أنت زبون</p>
+        <p class="explain-desc">أدخل الكود الذي أعطاك إياه البائع، وسترى ديونك محدَّثة لحظياً.</p>
+      </div>
+    </div>
+    <div class="explain-card">
+      <div class="explain-icon">🛡️</div>
+      <div>
+        <p class="explain-title">ثقة بلا نزاع</p>
+        <p class="explain-desc">أي تعديل على مبلغ يظهر للزبون بوضوح: من كذا إلى كذا.</p>
+      </div>
+    </div>
+
+    <div class="stack">
+      <button class="btn btn-primary" onclick="chooseRole('seller')">🏪 أنا بائع</button>
+      <button class="btn btn-outline" onclick="chooseRole('customer')">👤 أنا زبون</button>
+    </div>
+  </section>
+
+  <!-- شاشة تسجيل الدخول / إنشاء حساب برقم الهاتف + رمز سري -->
+  <section id="screen-phone" class="screen">
+    <div class="topbar">
+      <div class="brand-sm">تسجيل الدخول</div>
+      <button class="back-btn" onclick="showScreen('screen-welcome')">→</button>
+    </div>
+    <div class="card">
+      <label class="field-label">رقم الهاتف</label>
+      <input class="field" id="phone-input" type="tel" placeholder="+222 4X XX XX XX" />
+      <label class="field-label">الرمز السري (6 أرقام على الأقل)</label>
+      <input class="field code-input" id="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="••••" />
+      <p class="error-text" id="phone-error"></p>
+      <button class="btn btn-primary" onclick="loginExisting()">تسجيل الدخول</button>
+      <button class="btn btn-outline" onclick="registerNew()">إنشاء حساب جديد بهذا الرقم</button>
+      <p class="hint-text">أول مرة؟ اضغط "إنشاء حساب جديد". احفظ رمزك السري جيداً، فلا يمكن استرجاعه.</p>
+    </div>
+  </section>
+
+  <!-- شاشة إعداد المحل (أول مرة للبائع) -->
+  <section id="screen-shop-setup" class="screen">
+    <div class="topbar">
+      <div class="brand-sm">إعداد محلك</div>
+    </div>
+    <div class="card">
+      <label class="field-label">اسم المحل</label>
+      <input class="field" id="shop-name-input" placeholder="بوتيك الأمانة" />
+      <label class="field-label">اسمك</label>
+      <input class="field" id="owner-name-input" placeholder="اسمك الكامل" />
+      <p class="error-text" id="shop-setup-error"></p>
+      <button class="btn btn-primary" onclick="createShop()">بدء الاستخدام</button>
+    </div>
+  </section>
+
+  <!-- لوحة البائع -->
+  <section id="screen-seller-dashboard" class="screen">
+    <div class="topbar">
+      <div class="brand-sm" id="shop-name-display">محلي</div>
+      <button class="back-btn" onclick="logout()">خروج</button>
+    </div>
+    <div id="customers-list" class="row-list"></div>
+    <button class="btn btn-primary fab" onclick="showScreen('screen-add-customer')">+ إضافة زبون</button>
+  </section>
+
+  <!-- إضافة زبون -->
+  <section id="screen-add-customer" class="screen">
+    <div class="topbar">
+      <div class="brand-sm">إضافة زبون جديد</div>
+      <button class="back-btn" onclick="showScreen('screen-seller-dashboard')">→</button>
+    </div>
+    <div class="card">
+      <label class="field-label">اسم الزبون</label>
+      <input class="field" id="new-cust-name" placeholder="محمد ولد أحمد" />
+      <label class="field-label">رقم الهاتف</label>
+      <input class="field" id="new-cust-phone" type="tel" placeholder="+222 4X XX XX XX" />
+      <p class="error-text" id="add-cust-error"></p>
+      <button class="btn btn-primary" onclick="addCustomer()">إضافة الزبون</button>
+    </div>
+  </section>
+
+  <!-- شاشة عرض الكود -->
+  <section id="screen-show-code" class="screen">
+    <div class="topbar"><div class="brand-sm">كود الربط</div></div>
+    <div class="card center">
+      <div class="explain-icon center-icon">🔗</div>
+      <p class="sub-sm" id="code-for-name">شارك هذا الكود مع الزبون</p>
+      <p class="code-display" id="generated-code">0000</p>
+      <button class="btn btn-gold" onclick="copyCode()">نسخ الكود</button>
+      <button class="btn btn-outline" onclick="openCustomerFromCode()">ابدأ التسجيل الآن</button>
+    </div>
+  </section>
+
+  <!-- تفاصيل زبون (عند البائع) -->
+  <section id="screen-customer-detail" class="screen">
+    <div class="topbar">
+      <div class="brand-sm" id="cust-detail-name">الزبون</div>
+      <button class="back-btn" onclick="showScreen('screen-seller-dashboard')">→</button>
+    </div>
+    <div class="card balance-card">
+      <span class="sub-sm">الرصيد الحالي</span>
+      <span class="balance-amount" id="cust-detail-balance">0 أوقية</span>
+    </div>
+    <div class="card">
+      <div class="toggle-group">
+        <div class="toggle-opt" id="toggle-payment" onclick="setTxType('payment')">تسديد</div>
+        <div class="toggle-opt" id="toggle-debt" onclick="setTxType('debt')">دَين جديد</div>
+      </div>
+      <label class="field-label">المنتج أو الملاحظة</label>
+      <input class="field" id="tx-product" placeholder="خبز وشاي" />
+      <label class="field-label">المبلغ (أوقية)</label>
+      <input class="field" id="tx-amount" type="number" placeholder="50" />
+      <p class="error-text" id="tx-error"></p>
+      <button class="btn btn-primary" onclick="saveTransaction()">حفظ</button>
+    </div>
+    <p class="section-label">سجل المعاملات</p>
+    <div class="card" id="cust-transactions-list"></div>
+  </section>
+
+  <!-- شاشة إدخال الكود (للزبون) -->
+  <section id="screen-enter-code" class="screen">
+    <div class="topbar">
+      <div class="brand-sm">ربط بائع جديد</div>
+      <button class="back-btn" onclick="showScreen('screen-customer-dashboard')">→</button>
+    </div>
+    <div class="card center">
+      <div class="explain-icon center-icon">🏛️</div>
+      <p class="sub-sm">أدخل الكود الذي أعطاك إياه البائع</p>
+      <input class="field code-input" id="link-code-input" placeholder="4829" />
+      <p class="error-text" id="link-code-error"></p>
+      <button class="btn btn-primary" onclick="linkShop()">ربط الحساب</button>
+    </div>
+  </section>
+
+  <!-- لوحة الزبون: قائمة البائعين المرتبطين -->
+  <section id="screen-customer-dashboard" class="screen">
+    <div class="topbar">
+      <div class="brand-sm">دفاتري</div>
+      <button class="back-btn" onclick="logout()">خروج</button>
+    </div>
+    <div id="shops-list" class="row-list"></div>
+    <button class="btn btn-primary fab" onclick="showScreen('screen-enter-code')">+ ربط بائع جديد</button>
+  </section>
+
+  <!-- تفاصيل محل (عند الزبون، للقراءة فقط) -->
+  <section id="screen-shop-detail" class="screen">
+    <div class="topbar">
+      <div class="brand-sm" id="shop-detail-name">المحل</div>
+      <button class="back-btn" onclick="showScreen('screen-customer-dashboard')">→</button>
+    </div>
+    <div class="card balance-card">
+      <span class="sub-sm">رصيدك الحالي</span>
+      <span class="balance-amount" id="shop-detail-balance">0 أوقية</span>
+    </div>
+    <p class="section-label">سجل معاملاتك (للقراءة فقط)</p>
+    <div class="card" id="shop-transactions-list"></div>
+  </section>
+
+</div>
+
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
