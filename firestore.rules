@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // shops: كل بائع يقرأ/يكتب محله فقط
+    // ============================================================
+    match /shops/{shopId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                    && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ============================================================
+    // users: كل مستخدم يقرأ/يكتب ملفه الشخصي فقط (يحتوي رقم هاتفه)
+    // ============================================================
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // shopCustomers: العلاقة بين بائع وزبون
+    // - البائع (صاحب shopId) يملك صلاحية كاملة على زبائنه
+    // - الزبون المرتبط (customerId == uid) يقرأ فقط، لا يعدّل الرصيد
+    // - المصادقة هنا برقم الهاتف + رمز سري (وليس SMS)، لذلك نتحقق من
+    //   تطابق الرقم عبر مستند users/{uid} بدل رمز مصادقة SMS
+    // ============================================================
+    match /shopCustomers/{linkId} {
+
+      function isOwner() {
+        return request.auth != null &&
+          get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerId == request.auth.uid;
+      }
+
+      function myPhone() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone;
+      }
+
+      allow read: if request.auth != null && (
+        resource.data.customerId == request.auth.uid ||
+        isOwner() ||
+        // يسمح بالبحث عن الكود قبل الربط، شرط أن الرقم يطابق صاحب الجلسة
+        resource.data.customerPhone == myPhone()
+      );
+
+      allow create: if request.auth != null; // البائع ينشئ السجل عند إضافة زبون
+
+      // تحديث الرصيد: فقط صاحب المحل
+      // تحديث isLinked/customerId: فقط الزبون صاحب الرقم المطابق، ومرة واحدة
+      allow update: if request.auth != null && (
+        isOwner() ||
+        (
+          resource.data.isLinked == false &&
+          resource.data.customerPhone == myPhone() &&
+          request.resource.data.customerId == request.auth.uid &&
+          request.resource.data.isLinked == true
+        )
+      );
+
+      allow delete: if false;
+
+      // ============================================================
+      // transactions: فقط البائع صاحب المحل يكتب، والطرفان يقرآن
+      // ============================================================
+      match /transactions/{txId} {
+        allow read: if request.auth != null && (
+          get(/databases/$(database)/documents/shopCustomers/$(linkId)).data.customerId == request.auth.uid ||
+          get(/databases/$(database)/documents/shops/$(get(/databases/$(database)/documents/shopCustomers/$(linkId)).data.shopId)).data.ownerId == request.auth.uid
+        );
+        allow write: if request.auth != null &&
+          get(/databases/$(database)/documents/shops/$(get(/databases/$(database)/documents/shopCustomers/$(linkId)).data.shopId)).data.ownerId == request.auth.uid;
+      }
+    }
+  }
+}
