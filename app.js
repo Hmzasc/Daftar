@@ -287,23 +287,22 @@ window.addCustomer = async function () {
 
   const normalizedPhone = normalizePhone(phone);
 
-  // نولّد رمزاً فريداً بالتأكد أنه غير مستخدم حالياً (يمنع أي تصادم مستقبلاً)
-  async function generateUniqueLinkCode() {
+  try {
+    // نولّد رمزاً فريداً بالتأكد أنه غير مستخدم حالياً (يمنع أي تصادم مستقبلاً)
     const firestoreModule = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    let linkCode = null;
     for (let attempt = 0; attempt < 15; attempt++) {
       const candidate = String(Math.floor(1000 + Math.random() * 9000));
       const existing = await firestoreModule.getDocs(
         query(collection(db, "shopCustomers"), where("linkCode", "==", candidate))
       );
-      if (existing.empty) return candidate;
+      if (existing.empty) {
+        linkCode = candidate;
+        break;
+      }
     }
-    // احتياط نادر جداً: لو فشلت كل المحاولات، استخدم رمزاً أطول لضمان الفرادة
-    return String(Date.now()).slice(-6);
-  }
+    if (!linkCode) linkCode = String(Date.now()).slice(-6); // احتياط نادر جداً
 
-  const linkCode = await generateUniqueLinkCode();
-
-  try {
     const ref = await addDoc(collection(db, "shopCustomers"), {
       shopId: currentShopId,
       shopName: currentShopName,
@@ -324,7 +323,7 @@ window.addCustomer = async function () {
     showScreen("screen-show-code");
   } catch (err) {
     errorEl.textContent = "حدث خطأ، حاول مجدداً";
-    console.error(err);
+    console.error("[دفتر] فشل إضافة الزبون:", err);
   }
 };
 
