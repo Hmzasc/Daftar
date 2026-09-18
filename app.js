@@ -288,20 +288,10 @@ window.addCustomer = async function () {
   const normalizedPhone = normalizePhone(phone);
 
   try {
-    // نولّد رمزاً فريداً بالتأكد أنه غير مستخدم حالياً (يمنع أي تصادم مستقبلاً)
-    const firestoreModule = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-    let linkCode = null;
-    for (let attempt = 0; attempt < 15; attempt++) {
-      const candidate = String(Math.floor(1000 + Math.random() * 9000));
-      const existing = await firestoreModule.getDocs(
-        query(collection(db, "shopCustomers"), where("linkCode", "==", candidate))
-      );
-      if (existing.empty) {
-        linkCode = candidate;
-        break;
-      }
-    }
-    if (!linkCode) linkCode = String(Date.now()).slice(-6); // احتياط نادر جداً
+    // رمز من 6 أرقام (100000–999999): مليون احتمال تقريباً، يجعل تكرار
+    // نفس الرمز شبه مستحيل عملياً، بدون الحاجة لأي قراءة إضافية قد
+    // تصطدم بقواعد الأمان (لا يمكن لأي بائع التحقق من مستندات بائع آخر)
+    const linkCode = String(Math.floor(100000 + Math.random() * 900000));
 
     const ref = await addDoc(collection(db, "shopCustomers"), {
       shopId: currentShopId,
